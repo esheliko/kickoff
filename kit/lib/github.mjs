@@ -67,8 +67,20 @@ export function pushFirstCommit({ repo, token, purpose, fill, verify, log }) {
   git('checkout', '-q', '-B', 'main'); git('add', '-A'); git('commit', '-q', '-m', `Initial project from project-kit\n\nPurpose: ${purpose.trim()}`); git('push', '-q', '-u', 'origin', 'main');
 }
 
-/** Step: branch protection, `verify` must pass. Not available on every plan (private repo on a free account): reported, not fatal. */
+/** Step: the first commit really is on main (a push that was rejected or dropped must never end as a green run with an empty repo). */
+export async function assertPushed({ gh, dry, repo, log }) {
+  if (dry) return;
+  let sha;
+  try { sha = (await gh('GET', `/repos/${repo}/commits/main`)).sha; } catch (e) { throw new Error(`${repo} has no commit on main after the push: ${String(e.message).slice(0, 160)}. Check the token's permissions (contents + workflows write).`); }
+  log(`first commit on main: ${String(sha).slice(0, 7)}`);
+}
+
+/** Step: branch protection, `verify` must pass. Returns null when applied, otherwise the reason (the caller finishes its other output and then fails the run: an unprotected main is not a success). */
 export async function protectMain({ gh, repo, log }) {
-  try { await gh('PUT', `/repos/${repo}/branches/main/protection`, { required_status_checks: { strict: false, contexts: ['verify'] }, enforce_admins: false, required_pull_request_reviews: null, restrictions: null }); }
-  catch (e) { log(`branch protection not applied (${String(e.message).slice(0, 120)}): the rules in CLAUDE.md still apply`); }
+  try { await gh('PUT', `/repos/${repo}/branches/main/protection`, { required_status_checks: { strict: false, contexts: ['verify'] }, enforce_admins: false, required_pull_request_reviews: null, restrictions: null }); log('main is protected (required check: verify)'); return null; }
+  catch (e) {
+    const m = String(e.message);
+    const hint = /upgrade|public/i.test(m) ? 'private repositories on a free GitHub plan cannot have branch protection: use visibility=public or a paid plan' : /403|404/.test(m) ? "the token needs repository permission 'Administration: read and write'" : 'see the error';
+    return `branch protection NOT applied (${hint}): ${m.slice(0, 200)}`;
+  }
 }

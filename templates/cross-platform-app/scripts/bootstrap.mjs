@@ -6,7 +6,7 @@
 import { basename } from 'node:path';
 import { baseVars, composeProject, readJson } from '../../../kit/lib/compose.mjs';
 import { slugify, validateInputs } from '../../../kit/lib/core.mjs';
-import { cli, createRepo, ghClient, makeApi, makeLog, needEnv, protectMain, pushFirstCommit, run, seedIssues, setRepoSecrets } from '../../../kit/lib/github.mjs';
+import { assertPushed, cli, createRepo, ghClient, makeApi, makeLog, needEnv, protectMain, pushFirstCommit, run, seedIssues, setRepoSecrets } from '../../../kit/lib/github.mjs';
 
 const { arg, flag, dry: DRY } = cli();
 const name = arg('name'), purpose = arg('purpose');
@@ -30,9 +30,10 @@ const manifest = readJson(`${templateDir}/template.json`);
 // 1. Empty repository.
 const repoId = await createRepo({ gh, dry: DRY, owner: OWNER, slug, repo: REPO, visibility, purpose, log, templateLabel: templateDir + (seed ? ` + seed ${seed}` : '') });
 
-// 2. Vercel project for the static web app. Not linked to git: CI builds the engine (Vercel's image has no Rust) and uploads the result.
-log('creating Vercel project');
-const vp = await vercel('POST', '/v11/projects', { name: slug, framework: null });
+// 2. Vercel project for the static web app, connected to the repo. Vercel never builds from git (vercel.json "git.deploymentEnabled": false):
+// CI builds the engine (Vercel's image has no Rust) and uploads the result with `vercel deploy --prebuilt`.
+log('creating Vercel project (connected to the repository)');
+const vp = await vercel('POST', '/v11/projects', { name: slug, framework: null, gitRepository: { type: 'github', repo: REPO } });
 const vercelId = vp.id ?? '<project id>';
 
 // 3. Repository secrets (values come from here, never from a file).
@@ -53,8 +54,10 @@ else {
   const verify = flag('no-verify') ? null : (cwd) => { for (const [c, a] of manifest.verify.commands) run(c, a, { cwd, stdio: 'inherit' }); };
   pushFirstCommit({ repo: REPO, token: GH, purpose, fill, verify, log });
 }
+await assertPushed({ gh, dry: DRY, repo: REPO, log });
 
 // 6. Branch protection.
-await protectMain({ gh, repo: REPO, log });
+const unprotected = await protectMain({ gh, repo: REPO, log });
 
 log(`DONE ${DRY ? '(dry run) ' : ''}repo https://github.com/${REPO} | vercel project ${vercelId} | first task: issue #${issues[2] ?? 3}`);
+if (unprotected) { console.error(`::error::${unprotected}`); process.exit(1); }

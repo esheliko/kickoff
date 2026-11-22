@@ -8,7 +8,7 @@ import { randomBytes } from 'node:crypto';
 import { basename } from 'node:path';
 import { baseVars, composeProject, readJson } from '../../../kit/lib/compose.mjs';
 import { slugify } from '../../../kit/lib/core.mjs';
-import { cli, createRepo, ghClient, makeApi, makeLog, needEnv, protectMain, pushFirstCommit, run, seedIssues, setRepoSecrets, sleep } from '../../../kit/lib/github.mjs';
+import { assertPushed, cli, createRepo, ghClient, makeApi, makeLog, needEnv, protectMain, pushFirstCommit, run, seedIssues, setRepoSecrets, sleep } from '../../../kit/lib/github.mjs';
 import { VERCEL_REGION, secretNames, validateInputs, vercelEnv } from './bootstrap-core.mjs';
 
 const { arg, flag, dry: DRY } = cli();
@@ -72,8 +72,10 @@ else {
   const verify = flag('no-verify') ? null : (cwd) => { for (const [c, a] of manifest.verify.commands) run(c, a, { cwd, env, stdio: 'inherit' }); };
   pushFirstCommit({ repo: REPO, token: GH, purpose, fill, verify, log });
 }
+await assertPushed({ gh, dry: DRY, repo: REPO, log });
 
 // 7. Branch protection.
-await protectMain({ gh, repo: REPO, log });
+const unprotected = await protectMain({ gh, repo: REPO, log });
 
 log(`DONE ${DRY ? '(dry run) ' : ''}repo https://github.com/${REPO} | vercel project ${vercelId} | supabase ${ref} | first task: issue #${issues[2] ?? 3}`);
+if (unprotected) { console.error(`::error::${unprotected}`); process.exit(1); }

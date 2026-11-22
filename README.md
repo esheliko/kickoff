@@ -20,7 +20,7 @@ Add these in **this repo: Settings > Secrets and variables > Actions > New repos
 
 | Secret | How to get it |
 |---|---|
-| `KIT_GH_TOKEN` | github.com > your avatar > Settings > Developer settings > Personal access tokens > **Tokens (classic)** > Generate new token (classic). Name `kickoff`, expiration 1 year, tick **repo** and **workflow** (and **admin:org** only if you create projects in an organization). Copy the `ghp_...` value. |
+| `KIT_GH_TOKEN` | github.com > your avatar > Settings > Developer settings > Personal access tokens > **Tokens (classic)** > Generate new token (classic). Name `kickoff`, expiration 1 year, tick **repo** and **workflow**: without `workflow` the first push (it contains `.github/workflows`) is rejected; for a fine-grained token grant Administration, Contents, Workflows, Secrets and Issues: read and write (and **admin:org** only if you create projects in an organization). Copy the `ghp_...` value. |
 | `VERCEL_TOKEN` | vercel.com > your avatar > **Account Settings > Tokens** > Create. Name `kickoff`, scope = your team, expiration 1 year. Copy it. |
 | `VERCEL_TEAM_ID` | vercel.com > switch to your team > **Settings > General**: "Team ID" (`team_...`). |
 | `SUPABASE_ACCESS_TOKEN` | supabase.com/dashboard/account/tokens > **Generate new token**, name `kickoff`. Copy it (shown once). |
@@ -28,5 +28,7 @@ Add these in **this repo: Settings > Secrets and variables > Actions > New repos
 | `KIT_OWNER_EMAIL` | The email you want invited as the user of every new project. |
 
 `cross-platform-app` needs only `KIT_GH_TOKEN`, `VERCEL_TOKEN` and `VERCEL_TEAM_ID` (no Supabase).
+
+Each new project's Vercel project is connected to its GitHub repo, so the Vercel GitHub app must be installed for the account that owns the repos. Branch protection on `main` is applied by the run, and the run fails if it cannot be (private repos on a free GitHub plan do not support it: use `visibility=public` or a paid plan).
 
 Free-plan note: Supabase free allows 2 active projects; Vercel Hobby limits deployments (the Deploy Manager already paces them).
