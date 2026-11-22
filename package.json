@@ -1,0 +1,9 @@
+{
+  "name": "kickoff",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"kit/tests/*.test.mjs\"",
+    "check": "node tools/check-template.mjs"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "web-app",
+  "description": "Next.js 16 (App Router) + Supabase (auth, Postgres, RLS) + Vercel, with the Deploy Manager and smoke tests.",
+  "templateOnly": [
+    "scripts/bootstrap.mjs",
+    "scripts/bootstrap-core.mjs",
+    "tests/unit/bootstrap.test.ts"
+  ],
+  "board": {
+    "title": "Deploy board",
+    "body": "Maintained by `scripts/deploy-manager.mjs` (GitHub Actions). Do not edit by hand; see DEPLOYING.md."
+  },
+  "ruleVars": {
+    "LOCAL_CHECKS": "`npm run lint && npm run typecheck && npm test` (~15 s; CI runs build and smoke). `npm run build` only if you touched `next.config.ts`, `proxy.ts`, `public/sw.js`, route/page exports or layouts.",
+    "AFTER_MERGE": "A merge does NOT deploy: the Deploy Manager (`DEPLOYING.md`, issue #1) batches merges and deploys `main` ~5-15 min after they quiet down (Vercel Hobby limit). Do NOT deploy, redeploy or touch Vercel deployments, and do not wait. Check production only if the task needs it: issue #1 (live vs pending) or `git merge-base --is-ancestor <merge-sha> <live>`.",
+    "HOTFIX_LINE": " Real hotfix only: `[deploy-now]` in the squash commit message.",
+    "HOTFIX_FIX": "`[deploy-now]` if production is affected",
+    "SESSION_DEPLOY": "never deploy (Deploy Manager does)",
+    "UTC_SOURCES": "GitHub, Vercel and the CI board"
+  },
+  "verify": {
+    "commands": [
+      [
+        "npm",
+        [
+          "ci",
+          "--no-audit",
+          "--no-fund"
+        ]
+      ],
+      [
+        "npm",
+        [
+          "run",
+          "lint"
+        ]
+      ],
+      [
+        "npm",
+        [
+          "run",
+          "typecheck"
+        ]
+      ],
+      [
+        "npm",
+        [
+          "test"
+        ]
+      ]
+    ],
+    "needs": [
+      "node",
+      "npm"
+    ]
+  }
+}

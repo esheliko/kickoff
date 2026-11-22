@@ -1,26 +1,21 @@
 #!/usr/bin/env node
-// Fills the kit's placeholders into a fresh folder, exactly like scripts/bootstrap.mjs does after the services exist, but with fake ids and no network.
-// Used to prove the kit still produces a project that installs, lints, typechecks, tests and builds.
-//   node tools/instantiate-local.mjs <out-dir> ["Display Name"] ["purpose sentence"]
-import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+// Composes a template (kit/core + templates/<t> [+ seeds/<s>]) into a fresh folder exactly like the template's scripts/bootstrap.mjs does after the
+// services exist, but with fake ids and no network. Used to prove the kit still produces a project that installs, lints, typechecks, tests and builds.
+//   node tools/instantiate-local.mjs <template> <out-dir> ["Display Name"] ["purpose sentence"] [--seed <name>]
+import { baseVars, composeProject, listTemplates, readJson, KIT_ROOT } from '../kit/lib/compose.mjs';
+import { slugify } from '../kit/lib/core.mjs';
 import { join } from 'node:path';
-import { TEMPLATE_ONLY, leftover, slugify, substitute } from '../templates/web-app/scripts/bootstrap-core.mjs';
 
-const [out, name = 'Sample App', purpose = 'A sample project used to check the kit.'] = process.argv.slice(2);
-if (!out) { console.error('usage: instantiate-local.mjs <out-dir> [name] [purpose]'); process.exit(2); }
-rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true });
-cpSync(new URL('../templates/web-app', import.meta.url).pathname, out, { recursive: true });
-for (const p of TEMPLATE_ONLY) rmSync(join(out, p), { recursive: true, force: true });
-const vars = { NAME: name, SLUG: slugify(name), REPO: `owner/${slugify(name)}`, PURPOSE: purpose, REPO_ID: 1, VERCEL_PROJECT_ID: 'prj_test', VERCEL_TEAM_ID: 'team_test', TODAY: new Date().toISOString().slice(0, 10) };
-const left = new Set();
-(function walk(d) {
-  for (const f of readdirSync(d)) {
-    const p = join(d, f);
-    if (statSync(p).isDirectory()) { walk(p); continue; }
-    const t = readFileSync(p, 'utf8'), o = substitute(t, vars);
-    leftover(o).forEach((k) => left.add(k));
-    if (o !== t) writeFileSync(p, o);
-  }
-})(out);
-if (left.size) { console.error(`unfilled placeholders: ${[...left].join(', ')}`); process.exit(1); }
-console.log(`generated ${out}`);
+const argv = process.argv.slice(2);
+const si = argv.indexOf('--seed');
+const seed = si >= 0 ? argv.splice(si, 2)[1] : undefined;
+const [template, out, name0, purpose0] = argv;
+if (!template || !out) { console.error(`usage: instantiate-local.mjs <template> <out-dir> [name] [purpose] [--seed <name>]\ntemplates: ${listTemplates().join(', ')}`); process.exit(2); }
+const seedInfo = seed ? readJson(join(KIT_ROOT, 'seeds', seed, 'seed.json')) : {};
+const name = name0 ?? seedInfo.name ?? 'Sample App';
+const purpose = purpose0 ?? seedInfo.purpose ?? 'A sample project used to check the kit.';
+const slug = slugify(name);
+const vars = { ...baseVars({ name, slug, repo: `owner/${slug}`, purpose }), VERCEL_PROJECT_ID: 'prj_test', VERCEL_TEAM_ID: 'team_test' };
+const res = composeProject({ template, seed, out, vars });
+if (res.leftover.length) { console.error(`unfilled placeholders: ${res.leftover.join(', ')}`); process.exit(1); }
+console.log(`generated ${out} (template ${template}${seed ? `, seed ${seed}` : ''}; always-loaded rule text ~${res.tokens} tokens)`);

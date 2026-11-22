@@ -1,0 +1,57 @@
+{
+  "name": "cross-platform-app",
+  "description": "One codebase for web (PWA), desktop and mobile: a Rust engine compiled to WebAssembly and to native, a TypeScript/React UI, Tauri 2 shells. Static web hosting on Vercel, native apps from GitHub Releases. No backend.",
+  "templateOnly": [
+    "scripts/bootstrap.mjs"
+  ],
+  "alwaysLoadedTokens": 6500,
+  "board": {
+    "title": "Roadmap and status",
+    "body": "The living index of what is done, in progress and next. Keep it short: link the issues and `docs/` pages instead of copying them. The first task (issue #3) fills it in."
+  },
+  "verify": {
+    "commands": [
+      [
+        "npm",
+        [
+          "ci",
+          "--no-audit",
+          "--no-fund"
+        ]
+      ],
+      [
+        "npm",
+        [
+          "run",
+          "lint"
+        ]
+      ],
+      [
+        "npm",
+        [
+          "run",
+          "typecheck"
+        ]
+      ],
+      [
+        "npm",
+        [
+          "test"
+        ]
+      ]
+    ],
+    "needs": [
+      "node",
+      "npm",
+      "cargo"
+    ]
+  },
+  "ruleVars": {
+    "LOCAL_CHECKS": "`npm run lint && npm run typecheck && npm test` (Rust and TypeScript; 1-3 min cold, faster warm; CI also runs the WebAssembly build and the smoke test). `npm run build` only if you touched `crates/wasm`, `packages/engine-client`, the Vite config, `apps/web/public/sw.js` or how the engine is loaded.",
+    "AFTER_MERGE": "A merge to `main` deploys the web app by itself (CI job `deploy-web` runs after `verify` is green, only when app code changed). Native apps ship from version tags (`DEPLOYING.md`). Do NOT deploy, tag or release unless the owner asked, and do not wait. Check production only if the task needs it.",
+    "HOTFIX_LINE": " A release is a version tag made only when the owner asks.",
+    "HOTFIX_FIX": "tell the owner if a released build is affected",
+    "SESSION_DEPLOY": "never deploy or tag a release unless asked (CI deploys the web app after merge)",
+    "UTC_SOURCES": "GitHub and the CI board"
+  }
+}

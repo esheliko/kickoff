@@ -1,15 +1,16 @@
 name: New project
-# Creates a complete project from one of the templates in templates/: GitHub repo, Supabase project, Vercel project, secrets, first issues, first commit.
+# Creates a complete project from a template in templates/ (optionally plus a seed in seeds/): GitHub repo, the template's services (web-app: Supabase + Vercel; cross-platform-app: Vercel), secrets, first issues, first commit.
 # Run from the Actions tab or from a Claude session (actions_run_trigger). One-time secrets: see README.md.
 on:
   workflow_dispatch:
     inputs:
       template: { description: 'Template folder under templates/', required: true, default: 'web-app' }
+      seed: { description: 'Optional project seed under seeds/ (e.g. overcut): starter docs and modules on top of the template', required: false, default: '' }
       name: { description: 'Display name, e.g. "Habit Tracker"', required: true }
       slug: { description: 'Repo/project slug, e.g. habit-tracker', required: true }
       purpose: { description: 'What the project does (one or two sentences)', required: true }
       visibility: { description: 'private or public', required: false, default: 'private' }
-      region: { description: 'Supabase region (functions follow it)', required: false, default: 'ap-south-1' }
+      region: { description: 'Supabase region (web-app only; functions follow it)', required: false, default: 'ap-south-1' }
 permissions:
   contents: read
 concurrency: new-project
@@ -30,6 +31,7 @@ jobs:
           SUPABASE_ORG_ID: ${{ secrets.SUPABASE_ORG_ID }}
           KIT_OWNER_EMAIL: ${{ secrets.KIT_OWNER_EMAIL }}
           TEMPLATE: ${{ inputs.template }}
+          SEED: ${{ inputs.seed }}
           NAME: ${{ inputs.name }}
           SLUG: ${{ inputs.slug }}
           PURPOSE: ${{ inputs.purpose }}
@@ -38,4 +40,6 @@ jobs:
         run: |
           case "$TEMPLATE" in ''|*[!a-z0-9-]*) echo "bad template name"; exit 2;; esac
           [ -f "templates/$TEMPLATE/scripts/bootstrap.mjs" ] || { echo "template $TEMPLATE has no scripts/bootstrap.mjs"; exit 2; }
-          node "templates/$TEMPLATE/scripts/bootstrap.mjs" --template-dir "templates/$TEMPLATE" --name "$NAME" --slug "$SLUG" --purpose "$PURPOSE" --visibility "$VISIBILITY" --region "$REGION" | tee "$GITHUB_STEP_SUMMARY"
+          case "$SEED" in *[!a-z0-9-]*) echo "bad seed name"; exit 2;; esac
+          seed_args=(); [ -n "$SEED" ] && seed_args=(--seed "$SEED")
+          node "templates/$TEMPLATE/scripts/bootstrap.mjs" --template-dir "templates/$TEMPLATE" "${seed_args[@]}" --name "$NAME" --slug "$SLUG" --purpose "$PURPOSE" --visibility "$VISIBILITY" --region "$REGION" | tee "$GITHUB_STEP_SUMMARY"

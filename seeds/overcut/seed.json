@@ -1,0 +1,6 @@
+{
+  "template": "cross-platform-app",
+  "name": "Overcut",
+  "purpose": "A free, fast, feature-complete video and media editor for every device and screen: a better alternative to CapCut with no watermark, no paywall, no account, and everything running on your own device.",
+  "description": "Overcut: product docs (vision, features, roadmap, architecture, implementation plan, ADRs), the engine crate skeleton and a responsive editor shell. No features implemented."
+}
