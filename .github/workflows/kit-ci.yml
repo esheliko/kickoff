@@ -26,5 +26,15 @@ jobs:
         with: { targets: wasm32-unknown-unknown, components: 'rustfmt, clippy' }
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: '${{ runner.temp }}/project -> target' }
+      - name: wasm-bindgen CLI (version pinned in the template's crates/wasm/Cargo.toml; cached)
+        if: matrix.template == 'cross-platform-app'
+        id: wbg
+        run: echo "v=$(grep -oP 'wasm-bindgen\s*=\s*"=?\K[0-9.]+' templates/cross-platform-app/crates/wasm/Cargo.toml | head -1)" >> "$GITHUB_OUTPUT"
+      - if: matrix.template == 'cross-platform-app'
+        uses: actions/cache@v4
+        id: wbgcache
+        with: { path: ~/.cargo/bin/wasm-bindgen, key: 'wasm-bindgen-${{ runner.os }}-${{ steps.wbg.outputs.v }}' }
+      - if: matrix.template == 'cross-platform-app' && steps.wbgcache.outputs.cache-hit != 'true'
+        run: cargo install wasm-bindgen-cli --version ${{ steps.wbg.outputs.v }} --locked
       - name: Compose and verify
         run: node tools/check-template.mjs ${{ matrix.template }} "$RUNNER_TEMP/project" --build ${{ matrix.seed && format('--seed {0}', matrix.seed) || '' }}
