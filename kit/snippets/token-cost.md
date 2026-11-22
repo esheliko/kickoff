@@ -1,0 +1,7 @@
+## Token cost (every turn re-reads the whole context, so size x turns is the bill)
+- A session starts at ~104k tokens (tools, skills, connectors, before any code); a small fix costs ~25 turns x that. `.claude/settings.json` switches off org plugins this project never uses; do not re-enable them. Connectors (Figma, Gmail, Drive, Spotify, the Vercel MCP) are account-level: turn off the ones you do not need in claude.ai settings, they add ~10k tokens per session.
+- One task per session; start a new session instead of continuing a long one. Never run a manager/orchestrator session for hours (a worker restart re-writes all of it to the cache). Hand work over with a short note, not a long thread.
+- **Orchestrator cap:** any session that spawns child sessions retires at ~250k context and hands off a short note (an orchestrator once reached 784k tokens, $29.56).
+- Read narrowly: `Grep`/`Read` with `offset`+`limit`, never whole big files (big stylesheets, big action files) or whole docs; read a `docs/features/*.md` only for the feature you change (create one per feature that has rules worth keeping). Use a subagent for wide research so its output stays out of the main context.
+- Look at each screenshot once, at the size needed (`scripts/shot.mjs --sel` over `--full`); do not re-read the same picture. Never dump `list_events`/log output into the conversation: write it to a file and filter with a script.
+- Run the checks once at the end, not after every edit; `npm run smoke` only when the change touches a page flow.

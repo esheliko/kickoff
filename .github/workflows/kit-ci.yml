@@ -1,0 +1,30 @@
+name: Kit CI
+# Proves every template (and seed) still composes into a project that passes its own checks. Runs on changes to the kit itself.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  kit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { template: web-app, seed: '' }
+          - { template: cross-platform-app, seed: overcut }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm test
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: wasm32-unknown-unknown, components: 'rustfmt, clippy' }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: '${{ runner.temp }}/project -> target' }
+      - name: Compose and verify
+        run: node tools/check-template.mjs ${{ matrix.template }} "$RUNNER_TEMP/project" --build ${{ matrix.seed && format('--seed {0}', matrix.seed) || '' }}

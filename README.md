@@ -5,9 +5,15 @@ Templates for new projects. Tell a Claude session: **"create a kickoff project t
 ## Templates
 | Folder | What you get |
 |---|---|
-| `templates/web-app` | The Typecast work model (standing rules, reply tags, hooks, `process/rules.json`, CI `verify`, Deploy Manager, automation board, process skill) on a blank Next.js 16 + Supabase + Vercel app. |
+| `templates/web-app` | Next.js 16 + Supabase + Vercel, with Deploy Manager, smoke tests and the work model. |
+| `templates/cross-platform-app` | One codebase for web (PWA), desktop and mobile: Rust engine compiled to WebAssembly and native, React UI, Tauri 2 shells, static Vercel deploy, tag-based native releases, and the work model. No backend. |
 
-Add another by creating `templates/<name>/` (see CLAUDE.md). The workflow's `template` input picks it.
+Every template also gets `kit/core`: standing rules, reply tags, hooks, `process/rules.json`, CI-status scripts and the process skill.
+
+## Seeds
+A seed is project-specific starter content layered on a template (docs, roadmap, extra modules). `seeds/overcut` turns `cross-platform-app` into Overcut, a free cross-platform video editor: product docs, roadmap, architecture, implementation plan, ADRs, engine crate skeleton and an empty responsive editor shell. Run the workflow with `template=cross-platform-app`, `seed=overcut`.
+
+Add a template or seed by following CLAUDE.md. Local check: `node tools/instantiate-local.mjs <template> <out-dir> [--seed <name>]`.
 
 ## One-time setup: the secrets
 Add these in **this repo: Settings > Secrets and variables > Actions > New repository secret**.
@@ -20,5 +26,7 @@ Add these in **this repo: Settings > Secrets and variables > Actions > New repos
 | `SUPABASE_ACCESS_TOKEN` | supabase.com/dashboard/account/tokens > **Generate new token**, name `kickoff`. Copy it (shown once). |
 | `SUPABASE_ORG_ID` | supabase.com/dashboard > your organization > **Settings > General**: "Organization slug" (a short id like `abcdefghijkl`). |
 | `KIT_OWNER_EMAIL` | The email you want invited as the user of every new project. |
+
+`cross-platform-app` needs only `KIT_GH_TOKEN`, `VERCEL_TOKEN` and `VERCEL_TEAM_ID` (no Supabase).
 
 Free-plan note: Supabase free allows 2 active projects; Vercel Hobby limits deployments (the Deploy Manager already paces them).

@@ -17,12 +17,6 @@ if printf '%s' "$ci" | grep -q '\*\*fail\*\*'; then
   echo "CI IS RED ON MAIN (issue #2). If your session id or your change is listed below, fix it FIRST (CLAUDE.md rule 7). Never skip or delete a failing test."
   printf '%s\n' "$ci" | sed -n '/CI `verify`/,/Everyone who pushed/p' | head -30
 fi
-# Smoke credentials: say plainly what this session has, so nobody claims they are "saved" when they are not. Names only, never values.
-missing=""
-for v in SMOKE_EMAIL SMOKE_PASSWORD NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do [ -z "${!v}" ] && missing="$missing $v"; done
-if [ -n "$missing" ]; then
-  echo "SMOKE ENV: missing in this session:$missing. 'npm run smoke' cannot sign in until they are set (CI has its own repo secrets). Do not say they are saved; see CLAUDE.md 'Smoke credentials'."
-else
-  echo "SMOKE ENV: all smoke variables are set; 'npm run smoke' can run here."
-fi
+# Stack-specific checks (environment variables, toolchain), if the template ships .claude/hooks/stack-start.sh.
+[ -f "$HOOKDIR/stack-start.sh" ] && . "$HOOKDIR/stack-start.sh"
 exit 0

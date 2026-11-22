@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 // @ts-expect-error plain .mjs script, no types
-import { slugify, validateInputs, substitute, leftover, vercelEnv, startIssues, VERCEL_REGION, TEMPLATE_ONLY } from "../../scripts/bootstrap-core.mjs";
+import { validateInputs, vercelEnv, VERCEL_REGION } from "../../scripts/bootstrap-core.mjs";
+// @ts-expect-error plain .mjs script, no types
+import { slugify, substitute, leftover, startIssues } from "../../../../kit/lib/core.mjs";
 
 test("slugify makes a safe repo name", () => {
   assert.equal(slugify("My Cool App!"), "my-cool-app");
@@ -32,14 +34,13 @@ test("vercel env keeps the service key out of the browser-visible kind", () => {
 });
 
 test("the first issues keep #1 for the board and #2 for CI status", () => {
-  const i = startIssues({ name: "A", purpose: "Do a thing well." });
+  const i = startIssues({ name: "A", purpose: "Do a thing well.", board: { title: "Deploy board", body: "b" } });
   assert.equal(i.length, 3);
   assert.match(i[0].title, /board/i);
   assert.match(i[1].title, /CI/);
   assert.match(i[2].body, /Do a thing well\./);
 });
 
-test("every supabase region maps to a vercel region and template-only files are listed", () => {
+test("every supabase region maps to a vercel region", () => {
   assert.ok(Object.values(VERCEL_REGION).every((r) => /^[a-z]{3}\d$/.test(r as string)));
-  assert.ok(TEMPLATE_ONLY.includes("scripts/bootstrap.mjs"));
 });
