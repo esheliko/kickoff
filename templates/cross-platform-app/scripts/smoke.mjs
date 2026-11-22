@@ -6,7 +6,12 @@ import { spawn } from 'node:child_process';
 const bin = (c) => (process.platform === 'win32' ? `${c}.cmd` : c);
 const done = (p) => new Promise((res) => p.on('close', (code) => res(code ?? 1)));
 // `npm run preview` starts child processes: stop the whole group, or the server outlives the run and the next run tests a stale build.
-const stop = (p) => { try { process.platform === 'win32' ? spawn('taskkill', ['/pid', String(p.pid), '/T', '/F']) : process.kill(-p.pid); } catch { /* already gone */ } };
+const stop = (p) => {
+  try {
+    if (process.platform === 'win32') spawn('taskkill', ['/pid', String(p.pid), '/T', '/F']);
+    else process.kill(-p.pid);
+  } catch { /* already gone */ }
+};
 const args = process.argv.slice(2);
 let server;
 let base = process.env.SMOKE_BASE_URL;
