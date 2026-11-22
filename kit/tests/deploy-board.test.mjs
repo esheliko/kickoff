@@ -9,7 +9,7 @@ const read = (p) => readFileSync(`${T}/${p}`, 'utf8');
 test('cross-platform-app ships the deploy board (script, pure core, workflow, test, docs)', () => {
   for (const f of ['scripts/deploy-board.mjs', 'scripts/deploy-board-core.mjs', '.github/workflows/deploy-board.yml', 'tests/unit/deploy-board.test.ts']) assert.ok(existsSync(`${T}/${f}`), `${f} missing`);
   assert.match(read('DEPLOYING.md'), /## The deploy board/);
-  assert.match(read('scripts/deploy-board-core.mjs'), /REPO = '\{\{REPO\}\}'/);
+  assert.match(read('scripts/deploy-board-core.mjs'), /GITHUB_REPOSITORY \|\| '\{\{REPO\}\}'/);
 });
 
 test('the deploy-web step names are the ones the board reads', () => {
