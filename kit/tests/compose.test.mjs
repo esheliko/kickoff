@@ -48,3 +48,18 @@ for (const template of listTemplates()) {
 test('a seed must belong to its template', () => {
   assert.throws(() => composeProject({ template: 'web-app', seed: 'no-such-seed', out: join(tmpdir(), 'x'), vars: {} }), /unknown seed/);
 });
+
+// GitHub fails a workflow that is not valid YAML instantly, with zero jobs and no message (a required check then never appears).
+// `${{ }}` inside a one-line `{ }` mapping and an unquoted `: ` in a `run:` value both break the parse, so every workflow shipped to a project is parsed here.
+test('every workflow file shipped by the kit is valid YAML with jobs', async () => {
+  const { parse } = await import('yaml');
+  const files = [];
+  const walk = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) { if (e.name !== 'node_modules' && e.name !== '.git') walk(p); } else if (/[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(p)) files.push(p); } };
+  walk(KIT_ROOT);
+  assert.ok(files.length >= 5, 'found the workflow files');
+  for (const f of files) {
+    let doc;
+    assert.doesNotThrow(() => { doc = parse(readFileSync(f, 'utf8')); }, `${f} must parse as YAML`);
+    assert.ok(doc && typeof doc.jobs === 'object' && Object.keys(doc.jobs).length > 0, `${f} defines jobs`);
+  }
+});
